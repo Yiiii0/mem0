@@ -3,8 +3,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from mem0.llms.configs import LlmConfig
 from mem0.configs.llms.openai import OpenAIConfig
 from mem0.llms.openai import OpenAILLM
+from mem0.utils.factory import LlmFactory
 
 
 @pytest.fixture
@@ -38,6 +40,16 @@ def test_openai_llm_base_url():
     llm = OpenAILLM(config)
     # Note: openai client will parse the raw base_url into a URL object, which will have a trailing slash
     assert str(llm.client.base_url) == config_base_url + "/"
+
+
+def test_forge_provider_uses_openai_compatible_path():
+    config = {"model": "Provider/model-name", "api_key": "api_key", "openai_base_url": "https://forge.example/v1"}
+
+    llm = LlmFactory.create("forge", config)
+
+    assert isinstance(llm, OpenAILLM)
+    assert str(llm.client.base_url) == "https://forge.example/v1/"
+    assert LlmConfig(provider="forge", config=config).provider == "forge"
 
 
 def test_generate_response_without_tools(mock_openai_client):
